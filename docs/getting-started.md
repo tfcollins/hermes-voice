@@ -35,6 +35,8 @@ Add the required values:
 ```dotenv title="~/.config/hermes-voice/environment"
 HERMES_API_URL=http://127.0.0.1:8642
 HERMES_API_KEY=replace-with-your-api-server-key
+HAL_API_URL=http://10.0.0.113:8091
+HAL_API_KEY=replace-with-your-hal-assistant-key
 WHISPER_MODEL=distil-large-v3
 WHISPER_DEVICE=cuda
 WHISPER_COMPUTE_TYPE=float16

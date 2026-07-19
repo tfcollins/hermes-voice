@@ -4,6 +4,7 @@ const core = $('#core');
 const activity = $('#activity');
 const transcript = $('#transcript');
 const commandInput = $('#commandInput');
+const modelSelect = $('#modelSelect');
 
 let socket, audioContext, source, processor, stream, currentAudio, currentAudioResolve;
 let listening = false;
@@ -20,6 +21,7 @@ try {
   localStorage.removeItem('hermesCommandHistory');
 }
 let historyIndex = commandHistory.length;
+let activeModelLabel = 'Hermes Agent';
 
 const PRE_ROLL_MS = 360;
 const SILENCE_END_MS = 850;
@@ -67,7 +69,7 @@ function addMessage(role, text = '') {
   const article = document.createElement('article');
   article.className = role;
   const who = document.createElement('span');
-  who.textContent = role === 'user' ? 'YOU' : 'HERMES';
+  who.textContent = role === 'user' ? 'YOU' : activeModelLabel.toUpperCase();
   const paragraph = document.createElement('p');
   paragraph.textContent = text;
   article.append(who, paragraph);
@@ -87,7 +89,7 @@ function sendPrompt(rawText) {
   const text = rawText.trim();
   if (!text) return;
   if (busy) {
-    addActivity('Hermes is still working · wait for completion', 'failed');
+    addActivity(`${activeModelLabel} is still working · wait for completion`, 'failed');
     return;
   }
   if (!socket || socket.readyState !== WebSocket.OPEN) {
@@ -96,11 +98,34 @@ function sendPrompt(rawText) {
   }
   stopSpeaking(false);
   rememberCommand(text);
-  socket.send(JSON.stringify({type: 'prompt', text}));
+  socket.send(JSON.stringify({type: 'prompt', text, model: modelSelect.value}));
   busy = true;
   assistantArticle = null;
   assistantText = '';
   setState('thinking');
+}
+
+async function loadModels() {
+  try {
+    const response = await fetch('/api/models');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const models = (await response.json()).models || [];
+    const preferred = localStorage.getItem('hermesVoiceModel') || 'hermes';
+    modelSelect.innerHTML = '';
+    for (const model of models) {
+      const option = document.createElement('option');
+      option.value = model.id;
+      option.textContent = model.label;
+      option.dataset.provider = model.provider;
+      option.title = model.description || '';
+      modelSelect.appendChild(option);
+    }
+    modelSelect.value = models.some((model) => model.id === preferred) ? preferred : 'hermes';
+    activeModelLabel = modelSelect.selectedOptions[0]?.textContent || 'Hermes Agent';
+    addActivity(`Model fabric online · ${models.length} choices`, 'done');
+  } catch {
+    addActivity('HAL model catalog unavailable · Hermes only', 'failed');
+  }
 }
 
 function resetVisibleConversation(sessionId, workspace) {
@@ -135,12 +160,14 @@ function connect() {
       $('#listenButton').disabled = false;
       setState('idle');
       addActivity(`Session linked · ${payload.workspace}`, 'done');
+      await loadModels();
     } else if (event.type === 'session.reset') {
       resetVisibleConversation(payload.session_id, payload.workspace);
     } else if (event.type === 'user.message') {
       addMessage('user', payload.content);
     } else if (event.type === 'run.started') {
       setState('thinking');
+      if (payload.model) addActivity(`${activeModelLabel} · run started`);
     } else if (event.type === 'assistant.delta') {
       if (!assistantArticle) assistantArticle = addMessage('assistant');
       assistantText += payload.delta || '';
@@ -162,12 +189,12 @@ function connect() {
       lastAssistantText = assistantText;
       $('#repeatButton').disabled = !lastAssistantText;
       if (document.hidden && Notification.permission === 'granted') {
-        new Notification('Hermes completed the request', {body: lastAssistantText.slice(0, 160)});
+        new Notification(`${activeModelLabel} completed the request`, {body: lastAssistantText.slice(0, 160)});
       }
       await speakReply(lastAssistantText);
     } else if (event.type === 'run.failed' || event.type === 'error') {
       busy = false;
-      addActivity(payload.message || payload.error || 'Hermes turn failed', 'failed');
+      addActivity(payload.message || payload.error || 'Assistant turn failed', 'failed');
       setState('error');
     }
   };
@@ -334,6 +361,11 @@ async function speakReply(text) {
   }
 }
 
+modelSelect.addEventListener('change', () => {
+  activeModelLabel = modelSelect.selectedOptions[0]?.textContent || 'Hermes Agent';
+  localStorage.setItem('hermesVoiceModel', modelSelect.value);
+  addActivity(`Active model · ${activeModelLabel}`, 'done');
+});
 core.onclick = toggleListening;
 $('#listenButton').onclick = toggleListening;
 $('#voiceButton').onclick = () => {
@@ -374,7 +406,7 @@ window.addEventListener('keydown', (event) => {
   if (event.key === 'Escape' && speaking) {
     event.preventDefault();
     stopSpeaking();
-  } else if (event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON'].includes(document.activeElement.tagName)) {
+  } else if (event.code === 'Space' && !['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT'].includes(document.activeElement.tagName)) {
     event.preventDefault();
     toggleListening();
   }

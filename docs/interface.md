@@ -17,6 +17,7 @@ The UI is organized as a command surface, not a chat application with voice adde
 | **Conversation** | Displays your transcribed request and the streamed Hermes response. |
 | **Manual Command** | Sends text through the same Hermes session when speaking is inconvenient. |
 | **Suggested commands** | Starts workstation health, recent-work recovery, and capability workflows. |
+| **Model selector** | Chooses Hermes or an allow-listed Claude/Antigravity model served by HAL. The choice persists locally. |
 
 ### Central command surface
 
@@ -39,6 +40,7 @@ The UI is organized as a command surface, not a chat application with voice adde
 | Start listening | Select the central core or **Start listening** | ++space++ |
 | Stop listening | Select the central core or **Stop listening** | ++space++ |
 | Interrupt speech | Start listening | ++esc++ |
+| Select a model | Open **Model** and choose Hermes, Claude, or Antigravity | — |
 | Toggle spoken replies | Select **Voice on/off** | — |
 | Replay the last answer | Select **Repeat** | — |
 | Start a fresh conversation | Select **New session** | — |
@@ -73,6 +75,8 @@ Very short bursts are discarded. This avoids sending clicks, chair noise, and br
 ## Assistant behavior
 
 The voice-session prompt asks Hermes to complete actions rather than merely describe them, use tools when useful, lead with outcomes, and offer one relevant next step. It asks for clarification only when ambiguity would materially change the action.
+
+HAL-backed selections are independent one-shot model runs. HAL owns the Claude/Antigravity credentials, isolated workspace, timeout, and normalized progress events; Voice Core only submits the prompt and renders the result. Choose **Hermes Agent** for persistent Hermes memory, skills, and its normal tool environment. Choose a HAL model for an alternate-model answer or task.
 
 **New session** creates a new backing Hermes session and resets the visible conversation. Voice preference and the last 30 typed commands are kept locally in the browser; no API key is stored there.
 

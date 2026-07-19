@@ -5,7 +5,10 @@ body[data-state="listening"]{--state:#68f4dd;--glow:rgba(80,255,217,.42)}body[da
 @media(max-width:920px){main{grid-template-columns:1fr;grid-template-rows:1fr 245px}.core-stage{grid-row:1}.activity-panel{display:none}.transcript-panel{grid-row:2}.core{width:210px;height:210px}.core-light{inset:56px}.state-copy{margin-top:18px}.core-stage:before{width:520px}.core-stage:after{width:390px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important}}
 
 /* Assistant controls: useful shortcuts without turning the command surface into a dashboard. */
-.controls{flex-wrap:wrap;justify-content:center;max-width:760px}
+.controls{flex-wrap:wrap;justify-content:center;max-width:940px}
+.model-control{height:40px;display:flex;align-items:center;border:1px solid rgba(99,232,255,.2);background:rgba(4,25,31,.66);color:#7899a2;font:7px ui-monospace,monospace;letter-spacing:.12em;padding-left:10px}
+.model-control select{height:38px;max-width:220px;border:0;border-left:1px solid rgba(99,232,255,.12);margin-left:8px;padding:0 25px 0 10px;background:#06161b;color:var(--ink);font:9px ui-monospace,monospace;letter-spacing:.04em;outline:0}
+.model-control:focus-within{border-color:var(--cyan);box-shadow:0 0 18px rgba(99,232,255,.08)}
 .controls button.off{color:#587a82;border-color:rgba(99,232,255,.1);background:rgba(3,12,15,.5)}
 .quick-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:11px;z-index:2}
 .quick-actions>span{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.2em;margin-right:4px}

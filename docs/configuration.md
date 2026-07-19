@@ -8,12 +8,27 @@ The service reads configuration from environment variables at process startup. R
 |---|---|---|
 | `HERMES_API_URL` | `http://127.0.0.1:8642` | Base URL of the authenticated Hermes API server. |
 | `HERMES_API_KEY` | — | Required bearer token for Hermes requests. |
+| `HAL_API_URL` | `http://10.0.0.113:8091` | HAL base URL reachable from the workstation. |
+| `HAL_API_KEY` | — | Dedicated bearer token for HAL direct model runs. Keep it in the service environment only. |
 | `HERMES_WORKSPACE` | `~/dev` | Workspace label sent to the HUD when a session is ready. |
 | `WHISPER_MODEL` | `distil-large-v3` | faster-whisper model name or local model path. |
 | `WHISPER_DEVICE` | `cuda` | CTranslate2 execution device; use `cpu` when no supported GPU is available. |
 | `WHISPER_COMPUTE_TYPE` | `float16` | Compute type, commonly `float16` on CUDA or `int8` on CPU. |
 | `HERMES_VOICE` | `en-GB-RyanNeural` | Edge TTS voice identifier. |
 | `LOG_LEVEL` | `INFO` | Python logging level. |
+
+## HAL model fabric
+
+The HUD always offers **Hermes Agent**. When HAL is reachable, it also loads HAL's allow-listed catalog, currently including Claude Opus, Sonnet, and Haiku plus Antigravity Gemini Pro and Flash profiles.
+
+HAL must set `HAL_ASSISTANT_API_KEY`; Voice Core must receive the same value as `HAL_API_KEY`. The browser fetches model names from `/api/models`, but the bridge keeps the credential server-side and adds it only when submitting or polling a HAL run.
+
+```dotenv
+HAL_API_URL=http://10.0.0.113:8091
+HAL_API_KEY=replace-with-the-dedicated-hal-assistant-key
+```
+
+If HAL is offline, the selector safely falls back to Hermes only.
 
 ## Recommended profiles
 

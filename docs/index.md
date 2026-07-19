@@ -5,6 +5,8 @@
 
 A cinematic, voice-first interface for Hermes Agent with local GPU transcription, live tool activity, and spoken responses.
 
+Use Hermes for the persistent tool-using assistant, or switch the same command surface to Claude and Antigravity models securely hosted by HAL.
+
 <div class="hero__actions" markdown>
 [Start using it](getting-started.md){ .md-button .md-button--primary }
 [Explore the interface](interface.md){ .md-button }

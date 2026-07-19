@@ -30,6 +30,7 @@
       </div>
       <div class="controls">
         <button id="listenButton" type="button" disabled><span class="key">SPACE</span><span id="listenLabel">START LISTENING</span></button>
+        <label class="model-control" for="modelSelect"><span>MODEL</span><select id="modelSelect" aria-label="Assistant model"><option value="hermes">Hermes Agent</option></select></label>
         <button id="voiceButton" type="button" aria-pressed="true">VOICE ON</button>
         <button id="repeatButton" type="button" disabled>REPEAT</button>
         <button id="newButton" type="button">NEW SESSION</button>
@@ -50,7 +51,7 @@
     <section class="transcript-panel" aria-live="polite">
       <div class="panel-heading"><span>CONVERSATION</span><span id="sessionLabel">NEW SESSION</span></div>
       <div id="transcript" class="transcript">
-        <article class="assistant welcome"><span>HERMES</span><p>Voice core standing by.</p></article>
+        <article class="assistant welcome"><span>HERMES</span><p>Voice core standing by. Select Hermes, Claude, or Antigravity.</p></article>
       </div>
       <form id="commandForm">
         <label for="commandInput">MANUAL COMMAND</label>
@@ -59,7 +60,7 @@
       </form>
     </section>
   </main>
-  <footer><span>GPU TRANSCRIPTION</span><span>•</span><span>BRITISH NEURAL VOICE</span><span>•</span><span>HERMES STREAMING API</span></footer>
+  <footer><span>GPU TRANSCRIPTION</span><span>•</span><span>BRITISH NEURAL VOICE</span><span>•</span><span>HERMES + HAL MODEL FABRIC</span></footer>
   <script src="/static/app.js"></script>
 </body>
 </html>

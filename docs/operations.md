@@ -30,6 +30,7 @@ Expected shape:
 {
   "status": "ok",
   "hermes": {"ok": true, "status": 200},
+  "hal": {"ok": true, "url": "http://10.0.0.113:8091", "models": 5},
   "voice": "en-GB-RyanNeural",
   "whisper": {"model": "distil-large-v3", "device": "cuda"}
 }
@@ -63,6 +64,14 @@ nvidia-smi --query-compute-apps=pid,process_name,used_memory --format=csv
 3. Confirm `HERMES_API_URL` is reachable from the bridge host.
 4. Confirm `HERMES_API_KEY` matches the API server key.
 5. Look for session creation errors in the journal.
+
+### HAL models are absent or fail
+
+1. Query `/api/models`; Hermes should remain present even if HAL is unavailable.
+2. Confirm `HAL_API_URL` is reachable from Picard.
+3. Confirm `HAL_API_KEY` matches HAL's `HAL_ASSISTANT_API_KEY` without printing either value.
+4. Check HAL's `/api/assistant/models` catalog and backend logs.
+5. A `401` indicates a key mismatch; `503` means HAL has no assistant key configured.
 
 ```bash
 journalctl --user -u hermes-voice.service -n 100 --no-pager

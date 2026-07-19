@@ -24,6 +24,8 @@ STATIC = ROOT / "static"
 
 HERMES_URL = os.getenv("HERMES_API_URL", "http://127.0.0.1:8642").rstrip("/")
 HERMES_KEY = os.getenv("HERMES_API_KEY", "")
+HAL_URL = os.getenv("HAL_API_URL", "http://10.0.0.113:8091").rstrip("/")
+HAL_KEY = os.getenv("HAL_API_KEY", "")
 WHISPER_MODEL = os.getenv("WHISPER_MODEL", "distil-large-v3")
 WHISPER_DEVICE = os.getenv("WHISPER_DEVICE", "cuda")
 WHISPER_COMPUTE = os.getenv("WHISPER_COMPUTE_TYPE", "float16")
@@ -55,6 +57,12 @@ def auth_headers() -> dict[str, str]:
     return {"Authorization": f"Bearer {HERMES_KEY}", "Content-Type": "application/json"}
 
 
+def hal_headers() -> dict[str, str]:
+    if not HAL_KEY:
+        raise RuntimeError("HAL_API_KEY is not configured")
+    return {"Authorization": f"Bearer {HAL_KEY}", "Content-Type": "application/json"}
+
+
 async def hermes_health() -> dict[str, Any]:
     if not HERMES_KEY:
         return {"ok": False, "detail": "Hermes API key is not configured"}
@@ -64,6 +72,113 @@ async def hermes_health() -> dict[str, Any]:
             return {"ok": response.is_success, "status": response.status_code}
     except Exception as exc:
         return {"ok": False, "detail": type(exc).__name__}
+
+
+async def hal_models() -> list[dict[str, str]]:
+    """Return HAL's allow-listed direct-run models, or an empty list if offline."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            response = await client.get(f"{HAL_URL}/api/assistant/models")
+            response.raise_for_status()
+            return list(response.json().get("models", []))
+    except Exception:
+        log.warning("HAL model catalog is unavailable", exc_info=True)
+        return []
+
+
+def hal_event_to_voice(event: dict[str, Any]) -> dict[str, Any] | None:
+    """Translate a normalized HAL event into the Voice Core event vocabulary."""
+    kind = event.get("kind")
+    if kind == "text" and event.get("text"):
+        return {"type": "assistant.delta", "payload": {"delta": event["text"]}}
+    if kind == "tool_use":
+        return {
+            "type": "tool.started",
+            "payload": {
+                "tool_name": event.get("tool_name") or "HAL tool",
+                "args": event.get("tool_input") or {},
+                "preview": f"HAL · {event.get('adapter') or 'agent'}",
+            },
+        }
+    if kind == "tool_result":
+        return {
+            "type": "tool.completed",
+            "payload": {"tool_name": event.get("tool_name") or "HAL tool"},
+        }
+    if kind == "task_started":
+        return {
+            "type": "tool.started",
+            "payload": {
+                "tool_name": "HAL subagent",
+                "preview": event.get("task_description") or "delegated task",
+            },
+        }
+    if kind == "task_completed":
+        return {"type": "tool.completed", "payload": {"tool_name": "HAL subagent"}}
+    if kind == "rate_limit":
+        return {
+            "type": "tool.started",
+            "payload": {
+                "tool_name": "HAL rate limit",
+                "preview": event.get("rate_limit_status") or "waiting",
+            },
+        }
+    if kind == "error":
+        return {
+            "type": "run.failed",
+            "payload": {"message": event.get("error_message") or "HAL model failed"},
+        }
+    return None
+
+
+async def stream_hal_turn(model: str, text: str) -> AsyncIterator[dict[str, Any]]:
+    """Submit a HAL model run and poll its normalized event/result stream."""
+    timeout = httpx.Timeout(connect=10, read=30, write=30, pool=10)
+    async with httpx.AsyncClient(timeout=timeout) as client:
+        response = await client.post(
+            f"{HAL_URL}/api/assistant/runs",
+            headers=hal_headers(),
+            json={"prompt": text, "model": model, "timeout_seconds": 600},
+        )
+        if not response.is_success:
+            raise RuntimeError(f"HAL returned {response.status_code}: {response.text[:500]}")
+        run_id = str(response.json()["id"])
+        yield {"type": "run.started", "payload": {"model": model, "run_id": run_id}}
+        seen = 0
+        for _ in range(1_200):
+            status_response = await client.get(
+                f"{HAL_URL}/api/assistant/runs/{run_id}", headers=hal_headers()
+            )
+            if not status_response.is_success:
+                raise RuntimeError(
+                    f"HAL status returned {status_response.status_code}: "
+                    f"{status_response.text[:500]}"
+                )
+            run = status_response.json()
+            events = run.get("events") or []
+            for event in events[seen:]:
+                translated = hal_event_to_voice(event)
+                if translated:
+                    yield translated
+            seen = len(events)
+            if run.get("status") == "completed":
+                output = str((run.get("result") or {}).get("output") or "").strip()
+                yield {"type": "assistant.completed", "payload": {"content": output}}
+                yield {
+                    "type": "run.completed",
+                    "payload": {"model": model, "run_id": run_id},
+                }
+                return
+            if run.get("status") in {"failed", "cancelled"}:
+                result = run.get("result") or {}
+                detail = result.get("error") or result.get("output") or "HAL run failed"
+                yield {
+                    "type": "run.failed",
+                    "payload": {"model": model, "run_id": run_id, "error": str(detail)},
+                }
+                return
+            await asyncio.sleep(0.5)
+    raise RuntimeError("HAL run exceeded the Voice Core polling deadline")
 
 
 async def get_whisper() -> Any:
@@ -109,15 +224,35 @@ async def index() -> FileResponse:
 
 @app.get("/api/health")
 async def health() -> JSONResponse:
-    h = await hermes_health()
+    h, available_hal_models = await asyncio.gather(hermes_health(), hal_models())
     return JSONResponse(
         {
             "status": "ok" if h["ok"] else "degraded",
             "hermes": h,
+            "hal": {
+                "ok": bool(available_hal_models),
+                "url": HAL_URL,
+                "models": len(available_hal_models),
+            },
             "voice": VOICE,
             "whisper": {"model": WHISPER_MODEL, "device": WHISPER_DEVICE},
         }
     )
+
+
+@app.get("/api/models")
+async def models() -> dict[str, list[dict[str, str]]]:
+    return {
+        "models": [
+            {
+                "id": "hermes",
+                "label": "Hermes Agent",
+                "provider": "hermes",
+                "description": "Default tool-using Hermes session with memory and skills.",
+            },
+            *(await hal_models()),
+        ]
+    }
 
 
 @app.post("/api/transcribe")
@@ -274,7 +409,13 @@ async def voice_socket(ws: WebSocket) -> None:
                 continue
             await ws.send_json({"type": "user.message", "payload": {"content": text}})
             try:
-                async for event in stream_turn(session_id, text):
+                model = str(message.get("model") or "hermes")
+                event_stream = (
+                    stream_turn(session_id, text)
+                    if model == "hermes"
+                    else stream_hal_turn(model, text)
+                )
+                async for event in event_stream:
                     await ws.send_json(event)
                     effective = event.get("payload", {}).get("session_id")
                     if effective:
@@ -282,10 +423,10 @@ async def voice_socket(ws: WebSocket) -> None:
             except WebSocketDisconnect:
                 return
             except Exception as exc:
-                log.exception("Hermes turn failed")
+                log.exception("Voice model turn failed")
                 try:
                     await ws.send_json(
-                        {"type": "error", "payload": {"message": f"Hermes error: {exc}"}}
+                        {"type": "error", "payload": {"message": f"Model error: {exc}"}}
                     )
                 except WebSocketDisconnect:
                     return

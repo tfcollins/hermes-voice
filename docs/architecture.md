@@ -1,6 +1,6 @@
 # Architecture
 
-Hermes Voice Core is a thin local interaction layer. It owns microphone capture, speech recognition, state visualization, and speech playback; Hermes remains the agent runtime and source of tool execution.
+Hermes Voice Core is a thin local interaction layer. It owns microphone capture, speech recognition, model selection, state visualization, and speech playback. Hermes remains the default agent runtime; HAL provides isolated direct runs through Claude and Antigravity adapters.
 
 ## Request path
 
@@ -11,7 +11,8 @@ sequenceDiagram
     participant V as Voice bridge
     participant W as faster-whisper
     participant H as Hermes API
-    participant T as Hermes tools
+    participant HAL as HAL model fabric
+    participant T as Agent tools
     participant S as Neural TTS
 
     U->>B: Speak request
@@ -20,11 +21,18 @@ sequenceDiagram
     V->>W: Decode locally
     W-->>V: Transcript
     V-->>B: Text + confidence
-    B->>V: WebSocket prompt
-    V->>H: Session chat stream
-    H->>T: Execute tools
-    T-->>H: Tool results
-    H-->>V: SSE deltas + tool events
+    B->>V: WebSocket prompt + selected model
+    alt Hermes selected
+        V->>H: Session chat stream
+        H->>T: Execute tools
+        T-->>H: Tool results
+        H-->>V: SSE deltas + tool events
+    else HAL model selected
+        V->>HAL: Bearer-authenticated direct run
+        HAL->>T: Claude or Antigravity tools
+        T-->>HAL: Tool results
+        HAL-->>V: Normalized run events
+    end
     V-->>B: WebSocket state updates
     B->>V: POST /api/speak
     V->>S: Synthesize response
@@ -56,6 +64,7 @@ The browser never receives the Hermes API key.
 |---|---|
 | `GET /` | Serve the HUD. |
 | `GET /api/health` | Report bridge, Hermes, voice, and Whisper status. |
+| `GET /api/models` | Combine Hermes with HAL's live allow-listed model catalog. |
 | `POST /api/transcribe` | Accept an audio upload and return local transcription. |
 | `POST /api/speak` | Synthesize a bounded spoken response. |
 | `WS /ws` | Create a Hermes session and relay streamed events. |
@@ -84,6 +93,12 @@ The bridge parses server-sent events and forwards their names and payloads over 
 - `run.completed`
 - `run.failed`
 
+### HAL direct runs
+
+For a HAL selection, the bridge submits an authenticated `POST /api/assistant/runs`, then polls the protected run resource. HAL routes the stable model ID through its Claude or Antigravity adapter and emits normalized text, tool, task, rate-limit, and error events. The bridge translates those events into the same HUD vocabulary used by Hermes.
+
+HAL runs execute in isolated `/data/workspaces/assistant/<run-id>` directories and do not expose Claude, Google, or HAL credentials to Picard's browser.
+
 ### Speech synthesis
 
 Completed assistant text is converted from visual Markdown to natural speech and limited to 3,500 characters before synthesis. Headings, list markers, formatting punctuation, raw URLs, and fenced code are cleaned without changing the written transcript. The default voice is `en-GB-RyanNeural` with a slightly slower rate and lower pitch. The generated MP3 is deleted by a response background task after delivery.
@@ -111,11 +126,20 @@ flowchart LR
         API --> Agent --> Tools
     end
 
-    Bridge -->|Bearer-authenticated session stream| API
+    subgraph HALHost[HAL on Vulkan]
+        HALAPI[Bearer-protected assistant API]
+        Claude[Claude adapter]
+        AGY[Antigravity adapter]
+        HALAPI --> Claude
+        HALAPI --> AGY
+    end
+
+    Bridge -->|Hermes bearer key| API
+    Bridge -->|Dedicated HAL bearer key| HALAPI
 ```
 
-!!! danger "The Hermes key crosses a high-trust boundary"
-    Anyone who can read the bridge environment file can invoke the configured Hermes API and its tools. Protect the file, bind services narrowly, and do not expose the bridge as a public unauthenticated web application.
+!!! danger "Agent credentials cross high-trust boundaries"
+    Anyone who can read the bridge environment file can invoke the configured Hermes API and HAL direct-run API. Protect the file, bind the bridge to loopback, and do not expose it as a public unauthenticated web application. HAL rejects missing or invalid run credentials; the browser receives only model metadata, never either bearer key.
 
 ## Failure behavior
 
