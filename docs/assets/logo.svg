@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Hermes Voice Core">
+  <defs><radialGradient id="g"><stop offset="0" stop-color="#f2feff"/><stop offset=".18" stop-color="#62e8ff"/><stop offset="1" stop-color="#063444"/></radialGradient></defs>
+  <path fill="#031116" stroke="#62e8ff" stroke-width="2" d="M17 3h30l14 29-14 29H17L3 32z"/>
+  <circle cx="32" cy="32" r="15" fill="url(#g)" stroke="#9af3ff"/>
+  <path fill="none" stroke="#62e8ff" stroke-width="2" stroke-linecap="round" d="M32 8a24 24 0 0 1 20 11M52 45a24 24 0 0 1-20 11M12 45A24 24 0 0 1 8 32"/>
+</svg>

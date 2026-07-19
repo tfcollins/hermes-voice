@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hermes-voice-core"
+version = "0.1.0"
+description = "Local voice-first HUD for Hermes Agent"
+requires-python = ">=3.11"
+dependencies = [
+  "edge-tts>=7.0.0",
+  "fastapi>=0.115.0",
+  "faster-whisper>=1.1.0",
+  "httpx>=0.28.0",
+  "python-multipart>=0.0.20",
+  "uvicorn[standard]>=0.34.0",
+]
+
+[project.optional-dependencies]
+test = ["pytest>=8.0", "pytest-asyncio>=0.25"]
+docs = [
+  "mkdocs>=1.6.1",
+  "mkdocs-glightbox>=0.4.0",
+  "mkdocs-material>=9.6.0",
+  "mkdocs-minify-plugin>=0.8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["hermes_voice"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100

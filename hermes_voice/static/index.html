@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#02070a">
+  <title>Hermes Voice Core</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body data-state="connecting">
+  <canvas id="field" aria-hidden="true"></canvas>
+  <div class="scanlines" aria-hidden="true"></div>
+  <header>
+    <div class="wordmark"><span class="sigil">H</span><div><strong>HERMES</strong><small>VOICE CORE // PICARD</small></div></div>
+    <div class="system-status"><span id="statusDot"></span><span id="connectionText">CONNECTING</span></div>
+  </header>
+  <main>
+    <section class="core-stage" aria-label="Voice assistant status">
+      <div class="orbit-label orbit-label-a">NEURAL LINK</div>
+      <div class="orbit-label orbit-label-b">LOCAL AUDIO</div>
+      <button id="core" class="core" type="button" aria-label="Toggle listening">
+        <span class="reticle r1"></span><span class="reticle r2"></span><span class="reticle r3"></span>
+        <span class="core-light"></span>
+        <span id="meter" class="meter"></span>
+      </button>
+      <div class="state-copy">
+        <span id="eyebrow">INITIALIZING</span>
+        <h1 id="stateTitle">Establishing link</h1>
+        <p id="stateHint">Hermes is connecting to the local voice core.</p>
+      </div>
+      <div class="controls">
+        <button id="listenButton" type="button" disabled><span class="key">SPACE</span><span id="listenLabel">START LISTENING</span></button>
+        <button id="newButton" type="button">CLEAR DISPLAY</button>
+      </div>
+    </section>
+
+    <aside class="activity-panel">
+      <div class="panel-heading"><span>LIVE ACTIVITY</span><span id="clock">--:--:--</span></div>
+      <ol id="activity" aria-live="polite"><li class="muted">Waiting for Hermes…</li></ol>
+    </aside>
+
+    <section class="transcript-panel" aria-live="polite">
+      <div class="panel-heading"><span>CONVERSATION</span><span id="sessionLabel">NEW SESSION</span></div>
+      <div id="transcript" class="transcript">
+        <article class="assistant welcome"><span>HERMES</span><p>Voice core standing by.</p></article>
+      </div>
+      <form id="commandForm">
+        <label for="commandInput">MANUAL COMMAND</label>
+        <div><input id="commandInput" autocomplete="off" placeholder="Type a command or use your voice…"><button type="submit">SEND</button></div>
+      </form>
+    </section>
+  </main>
+  <footer><span>GPU TRANSCRIPTION</span><span>•</span><span>BRITISH NEURAL VOICE</span><span>•</span><span>HERMES STREAMING API</span></footer>
+  <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Hermes Voice Core Autostart
+Exec=sh -c 'for i in $(seq 1 30); do curl -fsS http://127.0.0.1:8765/api/health >/dev/null && exec google-chrome --app=http://127.0.0.1:8765 --start-maximized --class=HermesVoiceCore; sleep 2; done'
+Terminal=false
+X-GNOME-Autostart-enabled=true
+StartupNotify=false
