@@ -3,3 +3,15 @@
 body[data-state="listening"]{--state:#68f4dd;--glow:rgba(80,255,217,.42)}body[data-state="transcribing"]{--state:#f3c66e;--glow:rgba(243,198,110,.38)}body[data-state="thinking"],body[data-state="working"]{--state:#71b9ff;--glow:rgba(80,154,255,.42)}body[data-state="speaking"]{--state:#ffb267;--glow:rgba(255,154,80,.45)}body[data-state="error"]{--state:#ff637f;--glow:rgba(255,75,105,.4)}body[data-state="listening"] .core-light{animation:breathe 1.2s ease-in-out infinite}body[data-state="working"] .core,body[data-state="thinking"] .core{animation:float 2.4s ease-in-out infinite}body[data-state="speaking"] .core-light{animation:speak .42s ease-in-out infinite alternate}.core[data-level] .core-light{transform:scale(calc(1 + var(--audio-level,0)*.12))}
 @keyframes spin{to{transform:rotate(360deg)}}@keyframes spinReverse{to{transform:rotate(-360deg)}}@keyframes breathe{50%{transform:scale(1.08);filter:brightness(1.25)}}@keyframes speak{to{transform:scale(1.1);filter:brightness(1.35)}}@keyframes float{50%{transform:translateY(-5px)}}
 @media(max-width:920px){main{grid-template-columns:1fr;grid-template-rows:1fr 245px}.core-stage{grid-row:1}.activity-panel{display:none}.transcript-panel{grid-row:2}.core{width:210px;height:210px}.core-light{inset:56px}.state-copy{margin-top:18px}.core-stage:before{width:520px}.core-stage:after{width:390px}}@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.001ms!important;animation-iteration-count:1!important}}
+
+/* Assistant controls: useful shortcuts without turning the command surface into a dashboard. */
+.controls{flex-wrap:wrap;justify-content:center;max-width:760px}
+.controls button.off{color:#587a82;border-color:rgba(99,232,255,.1);background:rgba(3,12,15,.5)}
+.quick-actions{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:7px;margin-top:11px;z-index:2}
+.quick-actions>span{color:var(--muted);font:8px ui-monospace,monospace;letter-spacing:.2em;margin-right:4px}
+.quick-actions button{height:29px;padding:0 10px;border:1px solid rgba(99,232,255,.14);background:rgba(3,18,23,.55);color:#7faab4;font:8px ui-monospace,monospace;letter-spacing:.12em;cursor:pointer}
+.quick-actions button:hover,.quick-actions button:focus-visible{color:var(--ink);border-color:var(--cyan);outline:0}
+#commandForm small{display:block;margin-top:4px;color:#43656d;font:7px ui-monospace,monospace;letter-spacing:.08em}
+#repeatButton:disabled{opacity:.3;cursor:not-allowed}
+@media(max-height:760px){.quick-actions{display:none}.state-copy{margin-top:16px}.controls{margin-top:16px}}
+@media(max-width:920px){.quick-actions{max-width:520px;padding:0 12px}.controls{padding:0 12px}.controls button{min-height:40px}}

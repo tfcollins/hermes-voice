@@ -27,6 +27,8 @@ HERMES_API_KEY=... uv run uvicorn hermes_voice.app:app --host 127.0.0.1 --port 8
 
 Open `http://127.0.0.1:8765`, allow microphone access once, then click the core or press Space. The listener uses a short pre-roll and stops an utterance after sustained silence.
 
+Assistant controls include interruptible speech, persistent voice on/off, repeat, a real new-session action, typed-command history, and suggested workflows for Picard health and recent work. Visual Markdown is cleaned before TTS while the full response remains visible.
+
 ## Environment
 
 - `HERMES_API_URL` (default `http://127.0.0.1:8642`)

@@ -47,6 +47,17 @@ The core is not a decorative animation. It communicates where a request is in th
 
 </div>
 
+## Built to assist, not merely answer
+
+The console includes the interaction details that make a voice agent useful throughout the day:
+
+- **Action-first behavior** — Hermes uses tools when they improve accuracy, leads with the result, and reports blockers honestly.
+- **Interruptible speech** — press ++esc++ or start listening to stop a response immediately.
+- **Conversation control** — create a genuinely new Hermes session instead of only clearing visible text.
+- **Useful starting points** — check Picard, resume recent work, or review capabilities with one selection.
+- **Persistent preferences** — spoken responses and typed-command history survive a page reload.
+- **Natural speech rendering** — headings, links, lists, code fences, and other visual Markdown are cleaned before synthesis.
+
 ## What stays local
 
 Microphone audio is captured by the browser and sent only to the local FastAPI service. Speech-to-text runs on the workstation. Hermes receives the resulting text through its authenticated Sessions API; generated speech is returned to the browser as temporary audio.

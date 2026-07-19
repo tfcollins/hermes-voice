@@ -30,7 +30,15 @@
       </div>
       <div class="controls">
         <button id="listenButton" type="button" disabled><span class="key">SPACE</span><span id="listenLabel">START LISTENING</span></button>
-        <button id="newButton" type="button">CLEAR DISPLAY</button>
+        <button id="voiceButton" type="button" aria-pressed="true">VOICE ON</button>
+        <button id="repeatButton" type="button" disabled>REPEAT</button>
+        <button id="newButton" type="button">NEW SESSION</button>
+      </div>
+      <div class="quick-actions" aria-label="Suggested commands">
+        <span>TRY ASKING</span>
+        <button type="button" data-prompt="Check Picard's health and tell me only what needs attention.">CHECK PICARD</button>
+        <button type="button" data-prompt="Summarize what I was recently working on and suggest the best next step.">RESUME WORK</button>
+        <button type="button" data-prompt="What can you help me accomplish from this voice interface? Be concise.">CAPABILITIES</button>
       </div>
     </section>
 
@@ -46,7 +54,8 @@
       </div>
       <form id="commandForm">
         <label for="commandInput">MANUAL COMMAND</label>
-        <div><input id="commandInput" autocomplete="off" placeholder="Type a command or use your voice…"><button type="submit">SEND</button></div>
+        <div><input id="commandInput" autocomplete="off" placeholder="Type a command or use your voice…" aria-describedby="commandHint"><button type="submit">SEND</button></div>
+        <small id="commandHint">↑↓ history · Esc stops speech · Space toggles listening</small>
       </form>
     </section>
   </main>

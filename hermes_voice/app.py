@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import tempfile
 import uuid
 from contextlib import asynccontextmanager
@@ -31,6 +32,21 @@ WORKSPACE = os.getenv("HERMES_WORKSPACE", str(Path.home() / "dev"))
 
 _whisper: Any | None = None
 _whisper_lock = asyncio.Lock()
+
+
+def spoken_text(text: str, limit: int = 3500) -> str:
+    """Turn a visual Markdown response into natural text for speech synthesis."""
+    text = re.sub(r"```[^\n]*\n(.*?)```", r" Code omitted. ", text, flags=re.DOTALL)
+    text = re.sub(r"`([^`]+)`", r"\1", text)
+    text = re.sub(r"!\[([^]]*)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"\[([^]]+)\]\([^)]*\)", r"\1", text)
+    text = re.sub(r"^\s{0,3}#{1,6}\s+", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^\s*[-*+]\s+", "", text, flags=re.MULTILINE)
+    text = re.sub(r"^\s*\d+[.)]\s+", "", text, flags=re.MULTILINE)
+    text = re.sub(r"[*_~>|]", "", text)
+    text = re.sub(r"https?://\S+", "link", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:limit].strip()
 
 
 def auth_headers() -> dict[str, str]:
@@ -139,11 +155,10 @@ async def transcribe(audio: UploadFile = File(...)) -> dict[str, Any]:
 
 @app.post("/api/speak")
 async def speak(payload: dict[str, Any]) -> FileResponse:
-    text = str(payload.get("text") or "").strip()
+    text = spoken_text(str(payload.get("text") or ""))
     if not text:
         raise HTTPException(400, "Text is required")
-    # Avoid reading huge code/log responses aloud.
-    text = text[:3500]
+
     out = Path(tempfile.gettempdir()) / f"hermes-voice-{uuid.uuid4().hex}.mp3"
     try:
         await edge_tts.Communicate(text, VOICE, rate="-4%", pitch="-2Hz").save(str(out))
@@ -162,9 +177,13 @@ async def create_session() -> str:
     body = {
         "title": f"Voice Core {uuid.uuid4().hex[:6].upper()}",
         "system_prompt": (
-            "You are speaking through a voice-first workstation interface. Keep spoken replies "
-            "clear and concise unless detail is requested. Avoid markdown tables in brief spoken "
-            "answers. You are Hermes Agent; do not claim to be JARVIS or a Marvel character. "
+            "You are a proactive, dependable workstation assistant speaking through a voice-first "
+            "interface. Use tools when they improve accuracy and complete requested actions rather "
+            "than only explaining them. Keep spoken replies clear and concise unless detail is "
+            "requested. Lead with the result, state blockers honestly, and offer one useful next "
+            "step when appropriate. Ask a focused clarification only when ambiguity materially "
+            "changes the action. Avoid markdown tables in brief spoken answers. You are Hermes "
+            "Agent; do not claim to be JARVIS or a Marvel character. "
             "The voice console is physically on Picard.local. For workstation-specific commands "
             "and file operations, use SSH to picard.local unless the user names another host."
         ),
@@ -238,6 +257,15 @@ async def voice_socket(ws: WebSocket) -> None:
             message = await ws.receive_json()
             if message.get("type") == "ping":
                 await ws.send_json({"type": "pong", "payload": {}})
+                continue
+            if message.get("type") == "new_session":
+                session_id = await create_session()
+                await ws.send_json(
+                    {
+                        "type": "session.reset",
+                        "payload": {"session_id": session_id, "workspace": WORKSPACE},
+                    }
+                )
                 continue
             if message.get("type") != "prompt":
                 continue

@@ -16,6 +16,7 @@ The UI is organized as a command surface, not a chat application with voice adde
 | **Live Activity** | Shows session attachment and real Hermes tool starts/completions. |
 | **Conversation** | Displays your transcribed request and the streamed Hermes response. |
 | **Manual Command** | Sends text through the same Hermes session when speaking is inconvenient. |
+| **Suggested commands** | Starts workstation health, recent-work recovery, and capability workflows. |
 
 ### Central command surface
 
@@ -37,8 +38,12 @@ The UI is organized as a command surface, not a chat application with voice adde
 |---|---|---|
 | Start listening | Select the central core or **Start listening** | ++space++ |
 | Stop listening | Select the central core or **Stop listening** | ++space++ |
+| Interrupt speech | Start listening | ++esc++ |
+| Toggle spoken replies | Select **Voice on/off** | — |
+| Replay the last answer | Select **Repeat** | — |
+| Start a fresh conversation | Select **New session** | — |
 | Send typed command | Enter text and select **Send** | ++enter++ in the command field |
-| Clear visible history | Select **Clear display** | — |
+| Recall typed commands | — | ++arrow-up++ / ++arrow-down++ in the command field |
 
 ++space++ is ignored while focus is inside an input, button, or text area so typing does not accidentally toggle the microphone.
 
@@ -65,5 +70,10 @@ Very short bursts are discarded. This avoids sending clicks, chair noise, and br
 
 `tool.started`, `tool.completed`, and `tool.failed` events come directly from Hermes' streaming Sessions API. The rail formats tool names and includes a short preview of arguments when available.
 
-!!! info "Display clearing is not session deletion"
-    **Clear display** removes rows from the browser only. It does not delete the backing Hermes session or its persisted conversation.
+## Assistant behavior
+
+The voice-session prompt asks Hermes to complete actions rather than merely describe them, use tools when useful, lead with outcomes, and offer one relevant next step. It asks for clarification only when ambiguity would materially change the action.
+
+**New session** creates a new backing Hermes session and resets the visible conversation. Voice preference and the last 30 typed commands are kept locally in the browser; no API key is stored there.
+
+Before TTS, the bridge converts visual Markdown into natural speech. It removes formatting punctuation, replaces fenced code with a short “code omitted” cue, preserves link labels without reading URLs, and limits spoken output while leaving the full written response visible.

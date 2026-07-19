@@ -86,7 +86,9 @@ The bridge parses server-sent events and forwards their names and payloads over 
 
 ### Speech synthesis
 
-Completed assistant text is limited to 3,500 characters before synthesis. The default voice is `en-GB-RyanNeural` with a slightly slower rate and lower pitch. The generated MP3 is deleted by a response background task after delivery.
+Completed assistant text is converted from visual Markdown to natural speech and limited to 3,500 characters before synthesis. Headings, list markers, formatting punctuation, raw URLs, and fenced code are cleaned without changing the written transcript. The default voice is `en-GB-RyanNeural` with a slightly slower rate and lower pitch. The generated MP3 is deleted by a response background task after delivery.
+
+Playback is interruptible in the browser. Voice on/off and typed-command history are browser-local preferences; starting a new conversation requests a new session from the bridge.
 
 ## Trust boundaries
 

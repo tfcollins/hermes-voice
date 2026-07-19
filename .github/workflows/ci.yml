@@ -1,0 +1,44 @@
+name: Application CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+
+      - name: Install application and tests
+        run: uv sync --extra test --frozen
+
+      - name: Run Python tests
+        run: uv run pytest -q
+
+      - name: Validate browser JavaScript
+        run: node --check hermes_voice/static/app.js
+
+      - name: Compile Python package
+        run: uv run python -m compileall -q hermes_voice
